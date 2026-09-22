@@ -94,7 +94,6 @@ class MainActivity : androidx.activity.ComponentActivity() {
         }
     }
 
-    // 6. Подбор картинки под название знака
     private fun getZodiacImage(zodiacName: String): Int {
         return when (zodiacName) {
             "Овен" -> R.drawable.ic_aries

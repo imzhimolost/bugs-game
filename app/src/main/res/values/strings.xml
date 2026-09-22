@@ -1,3 +1,14 @@
 <resources>
     <string name="app_name">Bugs-game</string>
+
+    <string name="tab_registration">Игрок</string>
+    <string name="tab_rules">Правила</string>
+    <string name="tab_authors">Авторы</string>
+    <string name="tab_settings">Настройки</string>
+
+    <string name="game_rules_html"><![CDATA[
+        <h3>Правила игры «Жуки»</h3>
+        <p><b>Цель игры:</b> уничтожить как можно больше тараканов.</p>
+        <p><b>Управление:</b> нажимайте пальцем на появляющихся жуков на экране.</p>
+    ]]></string>
 </resources>
