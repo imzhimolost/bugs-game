@@ -90,6 +90,12 @@ class RegistrationFragment : Fragment() {
             ivZodiac.setImageResource(zodiac.second)
         }
 
+        val btnStartGame = view.findViewById<Button>(R.id.btnStartGame)
+        btnStartGame.setOnClickListener {
+            val intent = android.content.Intent(requireContext(), GameActivity::class.java)
+            startActivity(intent)
+        }
+
         return view
     }
 

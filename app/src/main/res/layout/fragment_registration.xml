@@ -99,6 +99,15 @@
             android:layout_marginTop="12dp"
             android:textSize="16sp" />
 
+        <Button
+            android:id="@+id/btnStartGame"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:backgroundTint="#2E7D32"
+            android:text="НАЧАТЬ ИГРУ"
+            android:textSize="18sp" />
+
     </LinearLayout>
 
 </ScrollView>
