@@ -21,7 +21,6 @@ class GameActivity : FragmentActivity() {
     private var score = 0
     private var hits = 0
     private var misses = 0
-    private val roundDurationSeconds = 30
     private var isGameOver = false
 
     private lateinit var tvScore: TextView
@@ -52,8 +51,11 @@ class GameActivity : FragmentActivity() {
 
         gameView.resetBugs()
 
+        val duration = GameSettings.roundDuration
+        tvTimer.text = "Время: $duration"
+
         countDownTimer?.cancel()
-        countDownTimer = object : CountDownTimer((roundDurationSeconds * 1000).toLong(), 1000) {
+        countDownTimer = object : CountDownTimer((duration * 1000).toLong(), 1000) {
             override fun onTick(millisUntilFinished: Long) {
                 tvTimer.text = "Время: ${millisUntilFinished / 1000}"
             }
@@ -102,7 +104,6 @@ class GameActivity : FragmentActivity() {
 
         private val bugs = mutableListOf<Bug>()
         private val handler = Handler(Looper.getMainLooper())
-        private val maxBugsCount = 5
         private val missPenalty = 5
 
         private val gameLoop = object : Runnable {
@@ -121,7 +122,9 @@ class GameActivity : FragmentActivity() {
 
         fun resetBugs() {
             bugs.clear()
-            repeat(maxBugsCount) { bugs.add(Bug.createRandom()) }
+            repeat(GameSettings.maxBugs) {
+                bugs.add(Bug.createRandom())
+            }
             handler.removeCallbacks(gameLoop)
             handler.post(gameLoop)
         }
@@ -131,9 +134,11 @@ class GameActivity : FragmentActivity() {
         }
 
         private fun updatePhysics() {
+            val speedFactor = GameSettings.speedMultiplier
+
             for (bug in bugs) {
-                bug.x += bug.speedX
-                bug.y += bug.speedY
+                bug.x += bug.speedX * speedFactor
+                bug.y += bug.speedY * speedFactor
 
                 val bound = bug.size / 2
                 if (bug.x <= bound || bug.x >= 1000 - bound) bug.speedX *= -1

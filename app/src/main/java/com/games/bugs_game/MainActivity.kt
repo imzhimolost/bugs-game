@@ -148,6 +148,7 @@ class AuthorsFragment : Fragment() {
 
 //настройки
 class SettingsFragment : Fragment() {
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = inflater.inflate(R.layout.fragment_settings, container, false)
 
@@ -163,20 +164,40 @@ class SettingsFragment : Fragment() {
         val sbRoundDuration = view.findViewById<SeekBar>(R.id.sbRoundDuration)
         val tvRoundDurationLabel = view.findViewById<TextView>(R.id.tvRoundDurationLabel)
 
+        sbSpeed.max = 4
+        sbSpeed.progress = (GameSettings.speedMultiplier - 1).toInt()
+        tvSpeedLabel.text = "Скорость игры: ${GameSettings.speedMultiplier.toInt()}x"
         sbSpeed.setOnSeekBarChangeListener(simpleSeekBarListener { progress ->
-            tvSpeedLabel.text = "Скорость игры: ${progress + 1}x"
+            val speed = (progress + 1).toFloat()
+            GameSettings.speedMultiplier = speed
+            tvSpeedLabel.text = "Скорость игры: ${speed.toInt()}x"
         })
 
+        sbMaxBugs.max = 13
+        sbMaxBugs.progress = GameSettings.maxBugs - 2
+        tvMaxBugsLabel.text = "Макс. тараканов на экране: ${GameSettings.maxBugs}"
         sbMaxBugs.setOnSeekBarChangeListener(simpleSeekBarListener { progress ->
-            tvMaxBugsLabel.text = "Макс. тараканов на экране: $progress"
+            val bugs = progress + 2
+            GameSettings.maxBugs = bugs
+            tvMaxBugsLabel.text = "Макс. тараканов на экране: $bugs"
         })
 
+        sbBonusInterval.max = 25
+        sbBonusInterval.progress = GameSettings.bonusInterval - 5
+        tvBonusIntervalLabel.text = "Интервал появления бонусов: ${GameSettings.bonusInterval} сек."
         sbBonusInterval.setOnSeekBarChangeListener(simpleSeekBarListener { progress ->
-            tvBonusIntervalLabel.text = "Интервал появления бонусов: $progress сек."
+            val interval = progress + 5
+            GameSettings.bonusInterval = interval
+            tvBonusIntervalLabel.text = "Интервал появления бонусов: $interval сек."
         })
 
+        sbRoundDuration.max = 110
+        sbRoundDuration.progress = GameSettings.roundDuration - 10
+        tvRoundDurationLabel.text = "Длительность раунда: ${GameSettings.roundDuration} сек."
         sbRoundDuration.setOnSeekBarChangeListener(simpleSeekBarListener { progress ->
-            tvRoundDurationLabel.text = "Длительность раунда: $progress сек."
+            val duration = progress + 10
+            GameSettings.roundDuration = duration
+            tvRoundDurationLabel.text = "Длительность раунда: $duration сек."
         })
 
         return view
