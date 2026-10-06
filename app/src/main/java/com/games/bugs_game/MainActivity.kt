@@ -1,115 +1,213 @@
 package com.games.bugs_game
 
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.*
+import androidx.fragment.app.FragmentActivity
+import androidx.core.text.HtmlCompat
+import androidx.fragment.app.Fragment
+import androidx.viewpager2.adapter.FragmentStateAdapter
+import androidx.viewpager2.widget.ViewPager2
+import com.google.android.material.tabs.TabLayout
+import com.google.android.material.tabs.TabLayoutMediator
 
-data class Player(
-    val name: String,
-    val gender: String,
-    val course: Int,
-    val difficulty: Int,
-    val birthDate: String,
-    val zodiac: String
-)
-
-class MainActivity : androidx.activity.ComponentActivity() {
-    private var day = 1
-    private var month = 1
-    private var year = 2000
+class MainActivity : FragmentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val etFullName = findViewById<EditText>(R.id.etFullName)
-        val rbMale = findViewById<RadioButton>(R.id.rbMale)
-        val spCourse = findViewById<Spinner>(R.id.spCourse)
-        val sbDifficulty = findViewById<SeekBar>(R.id.sbDifficulty)
-        val calendarView = findViewById<CalendarView>(R.id.cvDate)
-        val btnRegister = findViewById<Button>(R.id.btnRegister)
-        val ivZodiac = findViewById<ImageView>(R.id.ivZodiac)
-        val tvResult = findViewById<TextView>(R.id.tvResult)
+        val tabLayout = findViewById<TabLayout>(R.id.tabLayout)
+        val viewPager = findViewById<ViewPager2>(R.id.viewPager)
 
-        val courses = arrayOf("1 курс", "2 курс", "3 курс", "4 курс")
-        spCourse.adapter = ArrayAdapter(this,
-            android.R.layout.simple_spinner_dropdown_item,
-            courses)
+        viewPager.adapter = object : FragmentStateAdapter(this) {
+            override fun getItemCount(): Int = 4
+
+            override fun createFragment(position: Int): Fragment {
+                return when (position) {
+                    0 -> RegistrationFragment()
+                    1 -> RulesFragment()
+                    2 -> AuthorsFragment()
+                    3 -> SettingsFragment()
+                    else -> RegistrationFragment()
+                }
+            }
+        }
+
+        TabLayoutMediator(tabLayout, viewPager) { tab, position ->
+            tab.text = when (position) {
+                0 -> getString(R.string.tab_registration)
+                1 -> getString(R.string.tab_rules)
+                2 -> getString(R.string.tab_authors)
+                3 -> getString(R.string.tab_settings)
+                else -> ""
+            }
+        }.attach()
+    }
+}
+
+class RegistrationFragment : Fragment() {
+    private var day = 1
+    private var month = 1
+    private var year = 2000
+
+    //регистрация
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        val view = inflater.inflate(R.layout.fragment_registration, container, false)
+
+        val etFullName = view.findViewById<EditText>(R.id.etFullName)
+        val rbMale = view.findViewById<RadioButton>(R.id.rbMale)
+        val spCourse = view.findViewById<Spinner>(R.id.spCourse)
+        val sbDifficulty = view.findViewById<SeekBar>(R.id.sbDifficulty)
+        val calendarView = view.findViewById<CalendarView>(R.id.cvDate)
+        val btnRegister = view.findViewById<Button>(R.id.btnRegister)
+        val ivZodiac = view.findViewById<ImageView>(R.id.ivZodiac)
+        val tvResult = view.findViewById<TextView>(R.id.tvResult)
+
+        val courses = arrayOf("1 курс", "2 курс", "3 курс", "4 курс", "5 курс")
+        spCourse.adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_dropdown_item, courses)
 
         calendarView.setOnDateChangeListener { _, y, m, d ->
-            day = d
-            month = m + 1
-            year = y
+            day = d; month = m + 1; year = y
         }
 
         btnRegister.setOnClickListener {
             val name = etFullName.text.toString().trim()
-
             if (name.isEmpty()) {
                 etFullName.error = "Введите ФИО!"
                 return@setOnClickListener
             }
-
             val gender = if (rbMale.isChecked) "Мужской" else "Женский"
-
             val course = spCourse.selectedItemPosition + 1
             val difficulty = sbDifficulty.progress + 1
             val date = "$day.$month.$year"
+            val zodiac = getZodiac(day, month)
 
-            val zodiacName = getZodiacName(day, month)
-            val zodiacImage = getZodiacImage(zodiacName)
-
-            val player = Player(name, gender, course, difficulty, date, zodiacName)
-
-            tvResult.text = """
-                Данные игрока:
-                • ФИО: ${player.name}
-                • Пол: ${player.gender}
-                • Курс: ${player.course}
-                • Сложность игры: ${player.difficulty} из 5
-                • Дата рождения: ${player.birthDate}
-                • Знак зодиака: ${player.zodiac}
-            """.trimIndent()
-
+            tvResult.text = "Игрок: $name\nПол: $gender\nКурс: $course\nСложность: $difficulty\nДата: $date\nЗнак: ${zodiac.first}"
             ivZodiac.visibility = View.VISIBLE
-            ivZodiac.setImageResource(zodiacImage)
+            ivZodiac.setImageResource(zodiac.second)
         }
+
+        val btnStartGame = view.findViewById<Button>(R.id.btnStartGame)
+        btnStartGame.setOnClickListener {
+            val intent = android.content.Intent(requireContext(), GameActivity::class.java)
+            startActivity(intent)
+        }
+
+        return view
     }
 
-    private fun getZodiacName(day: Int, month: Int): String {
-        return when (month) {
-            1 -> if (day < 20) "Козерог" else "Водолей"
-            2 -> if (day < 19) "Водолей" else "Рыбы"
-            3 -> if (day < 21) "Рыбы" else "Овен"
-            4 -> if (day < 20) "Овен" else "Телец"
-            5 -> if (day < 21) "Телец" else "Близнецы"
-            6 -> if (day < 22) "Близнецы" else "Рак"
-            7 -> if (day < 23) "Рак" else "Лев"
-            8 -> if (day < 23) "Лев" else "Дева"
-            9 -> if (day < 23) "Дева" else "Весы"
-            10 -> if (day < 23) "Весы" else "Скорпион"
-            11 -> if (day < 23) "Скорпион" else "Стрелец"
-            12 -> if (day < 22) "Стрелец" else "Козерог"
-            else -> "Неизвестно"
+    private fun getZodiac(d: Int, m: Int): Pair<String, Int> {
+        return when (m) {
+            1 -> if (d < 20) Pair("Козерог", R.drawable.ic_capricorn) else Pair("Водолей", R.drawable.ic_aquarius)
+            2 -> if (d < 19) Pair("Водолей", R.drawable.ic_aquarius) else Pair("Рыбы", R.drawable.ic_pisces)
+            3 -> if (d < 21) Pair("Рыбы", R.drawable.ic_pisces) else Pair("Овен", R.drawable.ic_aries)
+            4 -> if (d < 20) Pair("Овен", R.drawable.ic_aries) else Pair("Телец", R.drawable.ic_taurus)
+            5 -> if (d < 21) Pair("Телец", R.drawable.ic_taurus) else Pair("Близнецы", R.drawable.ic_gemini)
+            6 -> if (d < 22) Pair("Близнецы", R.drawable.ic_gemini) else Pair("Рак", R.drawable.ic_cancer)
+            7 -> if (d < 23) Pair("Рак", R.drawable.ic_cancer) else Pair("Лев", R.drawable.ic_leo)
+            8 -> if (d < 23) Pair("Лев", R.drawable.ic_leo) else Pair("Дева", R.drawable.ic_virgo)
+            9 -> if (d < 23) Pair("Дева", R.drawable.ic_virgo) else Pair("Весы", R.drawable.ic_libra)
+            10 -> if (d < 23) Pair("Весы", R.drawable.ic_libra) else Pair("Скорпион", R.drawable.ic_scorpio)
+            11 -> if (d < 23) Pair("Скорпион", R.drawable.ic_scorpio) else Pair("Стрелец", R.drawable.ic_sagittarius)
+            12 -> if (d < 22) Pair("Стрелец", R.drawable.ic_sagittarius) else Pair("Козерог", R.drawable.ic_capricorn)
+            else -> Pair("Неизвестно", android.R.drawable.ic_menu_help)
         }
     }
+}
 
-    // 6. Подбор картинки под название знака
-    private fun getZodiacImage(zodiacName: String): Int {
-        return when (zodiacName) {
-            "Овен" -> R.drawable.ic_aries
-            "Телец" -> R.drawable.ic_taurus
-            "Близнецы" -> R.drawable.ic_gemini
-            "Рак" -> R.drawable.ic_cancer
-            "Лев" -> R.drawable.ic_leo
-            "Дева" -> R.drawable.ic_virgo
-            "Весы" -> R.drawable.ic_libra
-            "Скорпион" -> R.drawable.ic_scorpio
-            "Стрелец" -> R.drawable.ic_sagittarius
-            "Козерог" -> R.drawable.ic_capricorn
-            "Водолей" -> R.drawable.ic_aquarius
-            "Рыбы" -> R.drawable.ic_pisces
-            else -> android.R.drawable.ic_menu_help
+//правила
+class RulesFragment : Fragment() {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        val view = inflater.inflate(R.layout.fragment_rules, container, false)
+        val tvRules = view.findViewById<TextView>(R.id.tvRules)
+
+        val htmlRules = getString(R.string.game_rules_html)
+        tvRules.text = HtmlCompat.fromHtml(htmlRules, HtmlCompat.FROM_HTML_MODE_LEGACY)
+
+        return view
+    }
+}
+//авторы
+class AuthorsFragment : Fragment() {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        val view = inflater.inflate(R.layout.fragment_authors, container, false)
+        val lvAuthors = view.findViewById<ListView>(R.id.lvAuthors)
+
+        val authorsList = listOf(
+            Author("Шинкаренко Ксения", R.drawable.ph_author),
+        )
+
+        lvAuthors.adapter = AuthorAdapter(requireContext(), authorsList)
+
+        return view
+    }
+}
+
+//настройки
+class SettingsFragment : Fragment() {
+
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        val view = inflater.inflate(R.layout.fragment_settings, container, false)
+
+        val sbSpeed = view.findViewById<SeekBar>(R.id.sbSpeed)
+        val tvSpeedLabel = view.findViewById<TextView>(R.id.tvSpeedLabel)
+
+        val sbMaxBugs = view.findViewById<SeekBar>(R.id.sbMaxBugs)
+        val tvMaxBugsLabel = view.findViewById<TextView>(R.id.tvMaxBugsLabel)
+
+        val sbBonusInterval = view.findViewById<SeekBar>(R.id.sbBonusInterval)
+        val tvBonusIntervalLabel = view.findViewById<TextView>(R.id.tvBonusIntervalLabel)
+
+        val sbRoundDuration = view.findViewById<SeekBar>(R.id.sbRoundDuration)
+        val tvRoundDurationLabel = view.findViewById<TextView>(R.id.tvRoundDurationLabel)
+
+        sbSpeed.max = 4
+        sbSpeed.progress = (GameSettings.speedMultiplier - 1).toInt()
+        tvSpeedLabel.text = "Скорость игры: ${GameSettings.speedMultiplier.toInt()}x"
+        sbSpeed.setOnSeekBarChangeListener(simpleSeekBarListener { progress ->
+            val speed = (progress + 1).toFloat()
+            GameSettings.speedMultiplier = speed
+            tvSpeedLabel.text = "Скорость игры: ${speed.toInt()}x"
+        })
+
+        sbMaxBugs.max = 13
+        sbMaxBugs.progress = GameSettings.maxBugs - 2
+        tvMaxBugsLabel.text = "Макс. тараканов на экране: ${GameSettings.maxBugs}"
+        sbMaxBugs.setOnSeekBarChangeListener(simpleSeekBarListener { progress ->
+            val bugs = progress + 2
+            GameSettings.maxBugs = bugs
+            tvMaxBugsLabel.text = "Макс. тараканов на экране: $bugs"
+        })
+
+        sbBonusInterval.max = 25
+        sbBonusInterval.progress = GameSettings.bonusInterval - 5
+        tvBonusIntervalLabel.text = "Интервал появления бонусов: ${GameSettings.bonusInterval} сек."
+        sbBonusInterval.setOnSeekBarChangeListener(simpleSeekBarListener { progress ->
+            val interval = progress + 5
+            GameSettings.bonusInterval = interval
+            tvBonusIntervalLabel.text = "Интервал появления бонусов: $interval сек."
+        })
+
+        sbRoundDuration.max = 110
+        sbRoundDuration.progress = GameSettings.roundDuration - 10
+        tvRoundDurationLabel.text = "Длительность раунда: ${GameSettings.roundDuration} сек."
+        sbRoundDuration.setOnSeekBarChangeListener(simpleSeekBarListener { progress ->
+            val duration = progress + 10
+            GameSettings.roundDuration = duration
+            tvRoundDurationLabel.text = "Длительность раунда: $duration сек."
+        })
+
+        return view
+    }
+
+    private fun simpleSeekBarListener(onProgress: (Int) -> Unit): SeekBar.OnSeekBarChangeListener {
+        return object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(sb: SeekBar?, progress: Int, fromUser: Boolean) = onProgress(progress)
+            override fun onStartTrackingTouch(sb: SeekBar?) {}
+            override fun onStopTrackingTouch(sb: SeekBar?) {}
         }
     }
 }
