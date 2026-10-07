@@ -77,6 +77,18 @@ class GameActivity : FragmentActivity() {
         val totalShots = hits + misses
         val accuracy = if (totalShots > 0) (hits * 100) / totalShots else 0
 
+        val currentDate = java.text.SimpleDateFormat("dd.MM.yyyy HH:mm", java.util.Locale.getDefault()).format(java.util.Date())
+        val db = AppDatabase.getDatabase(this)
+        db.appDao().insertRecord(
+            RecordEntity(
+                playerName = GameSettings.currentPlayerName,
+                score = score,
+                difficulty = GameSettings.speedMultiplier.toInt(),
+                date = currentDate,
+                accuracy = accuracy
+            )
+        )
+
         AlertDialog.Builder(this)
             .setTitle("Раунд завершен!")
             .setMessage(

@@ -5,6 +5,7 @@
     <string name="tab_rules">Правила</string>
     <string name="tab_authors">Авторы</string>
     <string name="tab_settings">Настройки</string>
+    <string name="tab_records">Рекорды</string>
 
     <string name="game_rules_html"><![CDATA[
         <h3>Правила игры «Жуки»</h3>

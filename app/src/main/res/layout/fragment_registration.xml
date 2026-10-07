@@ -86,6 +86,24 @@
             android:layout_marginTop="16dp"
             android:text="Зарегистрировать игрока" />
 
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Или выберите сохраненного игрока:"
+            android:textStyle="bold" />
+
+        <Spinner
+            android:id="@+id/spExistingUsers"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginVertical="12dp"
+            android:background="#CCCCCC" />
+
         <ImageView
             android:id="@+id/ivZodiac"
             android:layout_width="100dp"

@@ -1,6 +1,7 @@
 package com.games.bugs_game
 
 object GameSettings {
+    var currentPlayerName: String = "Неизвестный жук"
     var speedMultiplier: Float = 1.0f
     var maxBugs: Int = 5
     var bonusInterval: Int = 10
