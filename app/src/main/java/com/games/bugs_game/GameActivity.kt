@@ -3,6 +3,11 @@ package com.games.bugs_game
 import android.app.AlertDialog
 import android.content.Context
 import android.graphics.Canvas
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
+import android.media.MediaPlayer
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.os.Handler
@@ -11,12 +16,14 @@ import android.view.MotionEvent
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.fragment.app.FragmentActivity
 import kotlin.math.atan2
 import kotlin.math.hypot
+import kotlin.random.Random
 
-class GameActivity : FragmentActivity() {
+class GameActivity : FragmentActivity(), SensorEventListener {
 
     private var score = 0
     private var hits = 0
@@ -28,6 +35,16 @@ class GameActivity : FragmentActivity() {
     private lateinit var gameView: GameView
     private var countDownTimer: CountDownTimer? = null
 
+    private lateinit var sensorManager: SensorManager
+    private var accelerometer: Sensor? = null
+    private var tiltX = 0f
+    private var tiltY = 0f
+
+    private var mediaPlayer: MediaPlayer? = null
+
+    private var isGravityBonusActive = false
+    private val bonusHandler = Handler(Looper.getMainLooper())
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_game)
@@ -35,6 +52,9 @@ class GameActivity : FragmentActivity() {
         tvScore = findViewById(R.id.tvScore)
         tvTimer = findViewById(R.id.tvTimer)
         val container = findViewById<FrameLayout>(R.id.gameContainer)
+
+        sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
 
         gameView = GameView(this)
         container.addView(gameView)
@@ -47,6 +67,7 @@ class GameActivity : FragmentActivity() {
         hits = 0
         misses = 0
         isGameOver = false
+        isGravityBonusActive = false
         updateScore()
 
         gameView.resetBugs()
@@ -64,6 +85,67 @@ class GameActivity : FragmentActivity() {
                 endGame()
             }
         }.start()
+
+        scheduleBonusSpawn()
+    }
+
+    private fun scheduleBonusSpawn() {
+        bonusHandler.removeCallbacksAndMessages(null)
+
+        val delayMillis = (GameSettings.bonusInterval * 1000).toLong()
+
+        bonusHandler.postDelayed({
+            if (!isGameOver) {
+                gameView.spawnBonus()
+            }
+        }, delayMillis)
+    }
+
+    private fun activateGravityBonus() {
+        isGravityBonusActive = true
+        Toast.makeText(this, "ГРАВИТАЦИЯ! Наклоняйте телефон!", Toast.LENGTH_SHORT).show()
+
+        playScreamSound()
+
+        bonusHandler.postDelayed({
+            isGravityBonusActive = false
+        }, 7000)
+    }
+
+    private fun playScreamSound() {
+        try {
+            mediaPlayer?.release()
+            val soundId = resources.getIdentifier("bug_scream", "raw", packageName)
+            if (soundId != 0) {
+                mediaPlayer = MediaPlayer.create(this, soundId)
+                mediaPlayer?.start()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    override fun onSensorChanged(event: SensorEvent?) {
+        if (event != null && event.sensor.type == Sensor.TYPE_ACCELEROMETER) {
+            tiltX = -event.values[0]
+            tiltY = event.values[1]
+        }
+    }
+
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+
+    override fun onResume() {
+        super.onResume()
+        accelerometer?.let {
+            sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME)
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        sensorManager.unregisterListener(this)
+        mediaPlayer?.release()
+        mediaPlayer = null
     }
 
     private fun updateScore() {
@@ -72,6 +154,7 @@ class GameActivity : FragmentActivity() {
 
     private fun endGame() {
         isGameOver = true
+        bonusHandler.removeCallbacksAndMessages(null)
         gameView.stopGame()
 
         val totalShots = hits + misses
@@ -109,6 +192,8 @@ class GameActivity : FragmentActivity() {
     override fun onDestroy() {
         super.onDestroy()
         countDownTimer?.cancel()
+        bonusHandler.removeCallbacksAndMessages(null)
+        mediaPlayer?.release()
         gameView.stopGame()
     }
 
@@ -117,6 +202,11 @@ class GameActivity : FragmentActivity() {
         private val bugs = mutableListOf<Bug>()
         private val handler = Handler(Looper.getMainLooper())
         private val missPenalty = 5
+
+        private var bonusX = 500f
+        private var bonusY = 500f
+        private val bonusSize = 150f
+        private var isBonusOnScreen = false
 
         private val gameLoop = object : Runnable {
             override fun run() {
@@ -134,6 +224,7 @@ class GameActivity : FragmentActivity() {
 
         fun resetBugs() {
             bugs.clear()
+            isBonusOnScreen = false
             repeat(GameSettings.maxBugs) {
                 bugs.add(Bug.createRandom())
             }
@@ -145,16 +236,53 @@ class GameActivity : FragmentActivity() {
             handler.removeCallbacks(gameLoop)
         }
 
+        fun spawnBonus() {
+            bonusX = Random.nextFloat() * 700 + 150
+            bonusY = Random.nextFloat() * 700 + 150
+            isBonusOnScreen = true
+            invalidate()
+
+            bonusHandler.postDelayed({
+                if (isBonusOnScreen && !isGameOver) {
+                    isBonusOnScreen = false
+                    scheduleBonusSpawn()
+                    invalidate()
+                }
+            }, 7000)
+        }
+
         private fun updatePhysics() {
             val speedFactor = GameSettings.speedMultiplier
 
             for (bug in bugs) {
+                if (isGravityBonusActive) {
+                    bug.speedX += tiltX * 1.5f
+                    bug.speedY += tiltY * 1.5f
+
+                    bug.speedX *= 0.95f
+                    bug.speedY *= 0.95f
+                }
+
                 bug.x += bug.speedX * speedFactor
                 bug.y += bug.speedY * speedFactor
 
                 val bound = bug.size / 2
-                if (bug.x <= bound || bug.x >= 1000 - bound) bug.speedX *= -1
-                if (bug.y <= bound || bug.y >= 1000 - bound) bug.speedY *= -1
+                if (bug.x <= bound) {
+                    bug.x = bound;
+                    bug.speedX = kotlin.math.abs(bug.speedX)
+                }
+                if (bug.x >= 1000 - bound) {
+                    bug.x = 1000 - bound;
+                    bug.speedX = -kotlin.math.abs(bug.speedX)
+                }
+                if (bug.y <= bound) {
+                    bug.y = bound;
+                    bug.speedY = kotlin.math.abs(bug.speedY)
+                }
+                if (bug.y >= 1000 - bound) {
+                    bug.y = 1000 - bound;
+                    bug.speedY = -kotlin.math.abs(bug.speedY)
+                }
             }
         }
 
@@ -162,6 +290,23 @@ class GameActivity : FragmentActivity() {
             super.onDraw(canvas)
             val scaleX = width / 1000f
             val scaleY = height / 1000f
+
+            if (isBonusOnScreen) {
+                val bx = bonusX * scaleX
+                val by = bonusY * scaleY
+                val bSize = bonusSize * scaleX
+
+                val bonusDrawable = AppCompatResources.getDrawable(context, android.R.drawable.ic_menu_compass)
+                bonusDrawable?.let {
+                    it.setBounds(
+                        (bx - bSize / 2).toInt(),
+                        (by - bSize / 2).toInt(),
+                        (bx + bSize / 2).toInt(),
+                        (by + bSize / 2).toInt()
+                    )
+                    it.draw(canvas)
+                }
+            }
 
             for (bug in bugs) {
                 val px = bug.x * scaleX
@@ -197,6 +342,17 @@ class GameActivity : FragmentActivity() {
                 val touchLogicalX = event.x / scaleX
                 val touchLogicalY = event.y / scaleY
 
+                if (isBonusOnScreen) {
+                    val distToBonus = hypot(touchLogicalX - bonusX, touchLogicalY - bonusY)
+                    if (distToBonus <= bonusSize / 1.2f) {
+                        isBonusOnScreen = false
+                        activateGravityBonus()
+                        scheduleBonusSpawn()
+                        invalidate()
+                        return true
+                    }
+                }
+
                 var hitBug: Bug? = null
                 for (bug in bugs.reversed()) {
                     val distance = hypot(touchLogicalX - bug.x, touchLogicalY - bug.y)
@@ -209,7 +365,6 @@ class GameActivity : FragmentActivity() {
                 if (hitBug != null) {
                     hits++
                     hitBug.health--
-
                     if (hitBug.health <= 0) {
                         score += hitBug.points
                         bugs.remove(hitBug)
