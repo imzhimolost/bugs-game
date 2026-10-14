@@ -113,6 +113,9 @@ class GameActivity : FragmentActivity(), SensorEventListener {
 
         gravityDurationHandler.postDelayed({
             isGravityBonusActive = false
+
+            gameView.normalizeBugsSpeed()
+
             Toast.makeText(this, "Гравитация выключена!", Toast.LENGTH_SHORT).show()
         }, 5000)
     }
@@ -236,6 +239,17 @@ class GameActivity : FragmentActivity(), SensorEventListener {
             }
             handler.removeCallbacks(gameLoop)
             handler.post(gameLoop)
+        }
+
+        fun normalizeBugsSpeed() {
+            for (bug in bugs) {
+                val currentSpeed = hypot(bug.speedX, bug.speedY)
+                if (currentSpeed > 0f) {
+                    val factor = bug.baseSpeed / currentSpeed
+                    bug.speedX *= factor
+                    bug.speedY *= factor
+                }
+            }
         }
 
         fun stopGame() {
