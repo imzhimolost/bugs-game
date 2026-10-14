@@ -44,6 +44,7 @@ class GameActivity : FragmentActivity(), SensorEventListener {
 
     private var isGravityBonusActive = false
     private val bonusHandler = Handler(Looper.getMainLooper())
+    private val gravityDurationHandler = Handler(Looper.getMainLooper())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -68,6 +69,7 @@ class GameActivity : FragmentActivity(), SensorEventListener {
         misses = 0
         isGameOver = false
         isGravityBonusActive = false
+        gravityDurationHandler.removeCallbacksAndMessages(null)
         updateScore()
 
         gameView.resetBugs()
@@ -107,9 +109,12 @@ class GameActivity : FragmentActivity(), SensorEventListener {
 
         playScreamSound()
 
-        bonusHandler.postDelayed({
+        gravityDurationHandler.removeCallbacksAndMessages(null)
+
+        gravityDurationHandler.postDelayed({
             isGravityBonusActive = false
-        }, 7000)
+            Toast.makeText(this, "Гравитация выключена!", Toast.LENGTH_SHORT).show()
+        }, 5000)
     }
 
     private fun playScreamSound() {
@@ -195,6 +200,7 @@ class GameActivity : FragmentActivity(), SensorEventListener {
         bonusHandler.removeCallbacksAndMessages(null)
         mediaPlayer?.release()
         gameView.stopGame()
+        gravityDurationHandler.removeCallbacksAndMessages(null)
     }
 
     inner class GameView(context: Context) : View(context) {
