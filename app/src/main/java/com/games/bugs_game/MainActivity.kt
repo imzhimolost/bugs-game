@@ -176,69 +176,25 @@ class AuthorsFragment : Fragment() {
     }
 }
 
-//настройки
 class SettingsFragment : Fragment() {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = inflater.inflate(R.layout.fragment_settings, container, false)
 
-        val sbSpeed = view.findViewById<SeekBar>(R.id.sbSpeed)
-        val tvSpeedLabel = view.findViewById<TextView>(R.id.tvSpeedLabel)
+        val manager = SettingsManager(
+            sbSpeed = view.findViewById(R.id.sbSpeed),
+            tvSpeedLabel = view.findViewById(R.id.tvSpeedLabel),
+            sbMaxBugs = view.findViewById(R.id.sbMaxBugs),
+            tvMaxBugsLabel = view.findViewById(R.id.tvMaxBugsLabel),
+            sbBonusInterval = view.findViewById(R.id.sbBonusInterval),
+            tvBonusIntervalLabel = view.findViewById(R.id.tvBonusIntervalLabel),
+            sbRoundDuration = view.findViewById(R.id.sbRoundDuration),
+            tvRoundDurationLabel = view.findViewById(R.id.tvRoundDurationLabel)
+        )
 
-        val sbMaxBugs = view.findViewById<SeekBar>(R.id.sbMaxBugs)
-        val tvMaxBugsLabel = view.findViewById<TextView>(R.id.tvMaxBugsLabel)
-
-        val sbBonusInterval = view.findViewById<SeekBar>(R.id.sbBonusInterval)
-        val tvBonusIntervalLabel = view.findViewById<TextView>(R.id.tvBonusIntervalLabel)
-
-        val sbRoundDuration = view.findViewById<SeekBar>(R.id.sbRoundDuration)
-        val tvRoundDurationLabel = view.findViewById<TextView>(R.id.tvRoundDurationLabel)
-
-        sbSpeed.max = 4
-        sbSpeed.progress = (GameSettings.speedMultiplier - 1).toInt()
-        tvSpeedLabel.text = "Скорость игры: ${GameSettings.speedMultiplier.toInt()}x"
-        sbSpeed.setOnSeekBarChangeListener(simpleSeekBarListener { progress ->
-            val speed = (progress + 1).toFloat()
-            GameSettings.speedMultiplier = speed
-            tvSpeedLabel.text = "Скорость игры: ${speed.toInt()}x"
-        })
-
-        sbMaxBugs.max = 13
-        sbMaxBugs.progress = GameSettings.maxBugs - 2
-        tvMaxBugsLabel.text = "Макс. тараканов на экране: ${GameSettings.maxBugs}"
-        sbMaxBugs.setOnSeekBarChangeListener(simpleSeekBarListener { progress ->
-            val bugs = progress + 2
-            GameSettings.maxBugs = bugs
-            tvMaxBugsLabel.text = "Макс. тараканов на экране: $bugs"
-        })
-
-        sbBonusInterval.max = 25
-        sbBonusInterval.progress = GameSettings.bonusInterval - 5
-        tvBonusIntervalLabel.text = "Интервал появления бонусов: ${GameSettings.bonusInterval} сек."
-        sbBonusInterval.setOnSeekBarChangeListener(simpleSeekBarListener { progress ->
-            val interval = progress + 5
-            GameSettings.bonusInterval = interval
-            tvBonusIntervalLabel.text = "Интервал появления бонусов: $interval сек."
-        })
-
-        sbRoundDuration.max = 110
-        sbRoundDuration.progress = GameSettings.roundDuration - 10
-        tvRoundDurationLabel.text = "Длительность раунда: ${GameSettings.roundDuration} сек."
-        sbRoundDuration.setOnSeekBarChangeListener(simpleSeekBarListener { progress ->
-            val duration = progress + 10
-            GameSettings.roundDuration = duration
-            tvRoundDurationLabel.text = "Длительность раунда: $duration сек."
-        })
+        manager.bindSettings()
 
         return view
-    }
-
-    private fun simpleSeekBarListener(onProgress: (Int) -> Unit): SeekBar.OnSeekBarChangeListener {
-        return object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(sb: SeekBar?, progress: Int, fromUser: Boolean) = onProgress(progress)
-            override fun onStartTrackingTouch(sb: SeekBar?) {}
-            override fun onStopTrackingTouch(sb: SeekBar?) {}
-        }
     }
 }
 
