@@ -18,7 +18,8 @@ data class Bug(
     val type: BugType,
     val points: Int,
     val drawableResId: Int,
-    var health: Int = 1
+    var health: Int = 1,
+    val baseSpeed: Float = kotlin.math.hypot(speedX, speedY)
 ) {
     companion object {
         fun createRandom(): Bug {
