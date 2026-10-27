@@ -14,5 +14,5 @@
         android:height="120dp" />
     <stroke
         android:width="2dp"
-        android:textColor="#FFA000" />
+        android:color="#FFA000" />
 </shape>
