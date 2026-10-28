@@ -5,7 +5,8 @@ import kotlin.random.Random
 enum class BugType {
     COMMON,
     FAST,
-    RARE
+    RARE,
+    GOLDEN
 }
 
 data class Bug(
@@ -59,6 +60,21 @@ data class Bug(
                     health = 1
                 )
             }
+        }
+
+        fun createGolden(goldPrice: Float = GoldServiceRetrofit.cachedGoldPrice): Bug {
+            val dynamicGoldPoints = (goldPrice / 100).toInt()
+            return Bug(
+                x = Random.nextFloat() * 700 + 150,
+                y = Random.nextFloat() * 700 + 150,
+                speedX = (Random.nextFloat() * 4 - 2) * 2f,
+                speedY = (Random.nextFloat() * 4 - 2) * 2f,
+                size = 230f,
+                type = BugType.GOLDEN,
+                points = dynamicGoldPoints,
+                drawableResId = R.drawable.bug_gold,
+                health = 3
+            )
         }
     }
 }

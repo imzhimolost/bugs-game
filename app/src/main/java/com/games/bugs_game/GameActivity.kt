@@ -19,6 +19,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.fragment.app.FragmentActivity
+import kotlinx.coroutines.launch
 import kotlin.math.atan2
 import kotlin.math.hypot
 import kotlin.random.Random
@@ -45,6 +46,7 @@ class GameActivity : FragmentActivity(), SensorEventListener {
     private var isGravityBonusActive = false
     private val bonusHandler = Handler(Looper.getMainLooper())
     private val gravityDurationHandler = Handler(Looper.getMainLooper())
+    private val goldenBugHandler = Handler(Looper.getMainLooper())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,6 +63,10 @@ class GameActivity : FragmentActivity(), SensorEventListener {
         container.addView(gameView)
 
         startGame()
+
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+            GoldServiceRetrofit.fetchGoldPrice()
+        }
     }
 
     private fun startGame() {
@@ -89,6 +95,7 @@ class GameActivity : FragmentActivity(), SensorEventListener {
         }.start()
 
         scheduleBonusSpawn()
+        scheduleGoldenBugSpawn()
     }
 
     private fun scheduleBonusSpawn() {
@@ -101,6 +108,16 @@ class GameActivity : FragmentActivity(), SensorEventListener {
                 gameView.spawnBonus()
             }
         }, delayMillis)
+    }
+
+    private fun scheduleGoldenBugSpawn() {
+        goldenBugHandler.removeCallbacksAndMessages(null)
+        goldenBugHandler.postDelayed({
+            if (!isGameOver) {
+                gameView.spawnGoldenCockroach()
+                scheduleGoldenBugSpawn()
+            }
+        }, 20000)
     }
 
     private fun activateGravityBonus() {
@@ -163,6 +180,7 @@ class GameActivity : FragmentActivity(), SensorEventListener {
     private fun endGame() {
         isGameOver = true
         bonusHandler.removeCallbacksAndMessages(null)
+        goldenBugHandler.removeCallbacksAndMessages(null)
         gameView.stopGame()
 
         val totalShots = hits + misses
@@ -201,6 +219,7 @@ class GameActivity : FragmentActivity(), SensorEventListener {
         super.onDestroy()
         countDownTimer?.cancel()
         bonusHandler.removeCallbacksAndMessages(null)
+        goldenBugHandler.removeCallbacksAndMessages(null)
         mediaPlayer?.release()
         gameView.stopGame()
         gravityDurationHandler.removeCallbacksAndMessages(null)
@@ -250,6 +269,17 @@ class GameActivity : FragmentActivity(), SensorEventListener {
                     bug.speedY *= factor
                 }
             }
+        }
+
+        fun spawnGoldenCockroach() {
+            val goldenBug = Bug.createGolden()
+            bugs.add(goldenBug)
+            invalidate()
+            Toast.makeText(
+                context,
+                "ЗОЛОТОЙ ТАРАКАН! Награда: ${goldenBug.points} очков!",
+                Toast.LENGTH_SHORT
+            ).show()
         }
 
         fun stopGame() {
