@@ -45,7 +45,6 @@ class GameActivity : FragmentActivity(), SensorEventListener {
 
     private var mediaPlayer: MediaPlayer? = null
 
-    private var isGravityBonusActive = false
     private val bonusHandler = Handler(Looper.getMainLooper())
     private val gravityDurationHandler = Handler(Looper.getMainLooper())
     private val goldenBugHandler = Handler(Looper.getMainLooper())
@@ -80,7 +79,6 @@ class GameActivity : FragmentActivity(), SensorEventListener {
         gameViewModel.startNewGame(duration)
         updateScore()
 
-        isGravityBonusActive = false
         gravityDurationHandler.removeCallbacksAndMessages(null)
 
         gameView.resetBugs()
@@ -96,6 +94,14 @@ class GameActivity : FragmentActivity(), SensorEventListener {
             startTimer(gameViewModel.remainingTimeSeconds)
             scheduleBonusSpawn()
             scheduleGoldenBugSpawn()
+
+            val remainingGravityMs = gameViewModel.getRemainingGravityMs()
+            if (remainingGravityMs > 0) {
+                gravityDurationHandler.removeCallbacksAndMessages(null)
+                gravityDurationHandler.postDelayed({
+                    deactivateGravityBonus()
+                }, remainingGravityMs)
+            }
         } else {
             tvTimer.text = "Время: 0"
         }
@@ -141,20 +147,22 @@ class GameActivity : FragmentActivity(), SensorEventListener {
     }
 
     private fun activateGravityBonus() {
-        isGravityBonusActive = true
-        Toast.makeText(this, "ГРАВИТАЦИЯ! Наклоняйте телефон!", Toast.LENGTH_SHORT).show()
+        val durationMs = 5000L
+        gameViewModel.activateGravity(durationMs)
 
+        Toast.makeText(this, "ГРАВИТАЦИЯ! Наклоняйте телефон!", Toast.LENGTH_SHORT).show()
         playScreamSound()
 
         gravityDurationHandler.removeCallbacksAndMessages(null)
-
         gravityDurationHandler.postDelayed({
-            isGravityBonusActive = false
+            deactivateGravityBonus()
+        }, durationMs)
+    }
 
-            gameView.normalizeBugsSpeed()
-
-            Toast.makeText(this, "Гравитация выключена!", Toast.LENGTH_SHORT).show()
-        }, 5000)
+    private fun deactivateGravityBonus() {
+        gameViewModel.cancelGravity()
+        gameView.normalizeBugsSpeed()
+        Toast.makeText(this, "Гравитация выключена!", Toast.LENGTH_SHORT).show()
     }
 
     private fun playScreamSound() {
@@ -351,7 +359,7 @@ class GameActivity : FragmentActivity(), SensorEventListener {
             val speedFactor = GameSettings.speedMultiplier
 
             for (bug in bugs) {
-                if (isGravityBonusActive) {
+                if (gameViewModel.isGravityActive()) {
                     bug.speedX += tiltX * 1.5f
                     bug.speedY += tiltY * 1.5f
 

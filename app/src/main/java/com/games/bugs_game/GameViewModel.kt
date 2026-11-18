@@ -15,6 +15,21 @@ class GameViewModel : ViewModel() {
     var isGameOver: Boolean = false
     var isGameStarted: Boolean = false
 
+    var gravityBonusEndTime: Long = 0L
+        private set
+
+    fun isGravityActive(): Boolean = System.currentTimeMillis() < gravityBonusEndTime
+
+    fun getRemainingGravityMs(): Long = maxOf(0L, gravityBonusEndTime - System.currentTimeMillis())
+
+    fun activateGravity(durationMs: Long = 5000L) {
+        gravityBonusEndTime = System.currentTimeMillis() + durationMs
+    }
+
+    fun cancelGravity() {
+        gravityBonusEndTime = 0L
+    }
+
     fun startNewGame(duration: Int) {
         score = 0
         hits = 0
@@ -22,6 +37,7 @@ class GameViewModel : ViewModel() {
         remainingTimeSeconds = duration
         isGameOver = false
         isGameStarted = true
+        cancelGravity()
     }
 
     fun registerHit(points: Int) {
